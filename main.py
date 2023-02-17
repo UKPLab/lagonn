@@ -20,13 +20,14 @@ from lagonn import LaGoNN
 
 
 parser = argparse.ArgumentParser(description='configs LaGoNN')
+parser.add_argument('--WRITE', action="store", type=str2bool, dest='write', default='True')
 parser.add_argument('--TRANSFORMER_CLF', action="store", dest='transformer_clf', default='roberta-base')
 parser.add_argument('--ST_MODEL', action="store", dest='st_model', default="sentence-transformers/paraphrase-mpnet-base-v2")
 parser.add_argument('--SEED', action="store", type=int, dest='seed', default=0)
 parser.add_argument('--TASK', action="store", dest='task', default='insincere-questions')
 parser.add_argument('--MODE', action="store", dest='mode', default='LAGONN_CHEAP')
 parser.add_argument('--LAGONN_CONFIG', action="store", dest='lagonnconfig', default='LABEL')
-parser.add_argument('--WRITE', action="store", type=str2bool, dest='write', default='False')
+
 
 
 
@@ -111,6 +112,7 @@ if __name__ == '__main__':
             print('AP: {}'.format(test_avg_pre))
             print('F1: {}'.format(test_f1))
             print()
+            print('writing')
 
             if args.write:
                 write_eval_jsons(eval_dict, args, step, balance)
