@@ -1,0 +1,8 @@
+datasets==2.8.0
+numpy==1.23.4
+pandas==1.5.1
+scikit_learn==1.2.1
+sentence_transformers==2.2.2
+setfit==0.3.0
+torch==1.9.0+cu111
+transformers==4.24.0
