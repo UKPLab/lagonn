@@ -96,7 +96,7 @@ if __name__ == '__main__':
                     lgn = LaGoNN(input_train_ds, input_val_ds, input_test_ds, args, step)
                     eval_dict, sbert_trainer = lgn.predict()
                 else:
-                    lgn = LaGoNN(input_train_ds, input_val_ds, input_test_ds, args, sbert_trainer)
+                    lgn = LaGoNN(input_train_ds, input_val_ds, input_test_ds, args, step, sbert_trainer)
                     eval_dict = lgn.predict()
 
             train_avg_pre = eval_dict['train_avg_pre']
@@ -112,7 +112,6 @@ if __name__ == '__main__':
             print('AP: {}'.format(test_avg_pre))
             print('F1: {}'.format(test_f1))
             print()
-            print('writing')
 
             if args.write:
                 write_eval_jsons(eval_dict, args, step, balance)

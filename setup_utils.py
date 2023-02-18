@@ -89,7 +89,6 @@ def write_eval_jsons(eval_dict, args, step, balance):
     #    os.remove(writefile)
     #except OSError:
     #    pass
-    
     with open(writefile, 'a') as f:
         f.write(json.dumps(eval_dict)+'\n')
 
