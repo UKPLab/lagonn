@@ -2,7 +2,7 @@
 
 Source code and data for Like a Good Nearest Neighbor: Practical Content Moderation with Sentence Transformers.
 
-Contact person: Luke Bates, luke.bates@tu-darmstadt.de
+Contact person: Luke Bates, luke's_first_name.luke's_last_name@tu-darmstadt.de
 
 https://www.ukp.tu-darmstadt.de/
 
