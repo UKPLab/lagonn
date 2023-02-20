@@ -98,7 +98,8 @@ Coming soon!
 
 ### Citation
 If our work was helpful for your work, please be so kind as to cite us:
-@article{lagonn_2023,
+
+```@article{lagonn_2023,
 doi = {10.48550/ARXIV.2302.08957},
 url = {https://arxiv.org/abs/2302.08957},
 author = {Bates, Luke and Gurevych, Iryna},
@@ -108,4 +109,4 @@ title = {Like a Good Nearest Neighbor: Practical Content Moderation with Sentenc
 publisher = {arXiv},
 year = {2023},
 copyright = {Creative Commons Attribution 4.0 International}
-}
+}```
