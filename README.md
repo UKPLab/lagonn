@@ -108,5 +108,5 @@ journal={arXiv preprint arXiv:2302.08957},
 title = {Like a Good Nearest Neighbor: Practical Content Moderation with Sentence Transformers},
 publisher = {arXiv},
 year = {2023},
-copyright = {Creative Commons Attribution 4.0 International}
-}```
+copyright = {Creative Commons Attribution 4.0 International}}
+```
