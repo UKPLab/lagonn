@@ -1,6 +1,6 @@
 # Like a Good Nearest Neighbor: LaGoNN
 
-Source code and data for Like a Good Nearest Neighbor: Practical Content Moderation with Sentence Transformers.
+Source code and data for [Like a Good Nearest Neighbor: Practical Content Moderation with Sentence Transformers](https://arxiv.org/abs/2302.08957).
 
 Contact person: Luke Bates, luke's_first_name.luke's_last_name@tu-darmstadt.de
 
@@ -95,3 +95,17 @@ Note that you will need to complete all five (0-4) seeds. This is because we rep
 
 ### Use LaGoNN in your own work
 Coming soon!
+
+### Citation
+If our work was helpful for your work, please be so kind as to cite us:
+@article{lagonn_2023,
+doi = {10.48550/ARXIV.2302.08957},
+url = {https://arxiv.org/abs/2302.08957},
+author = {Bates, Luke and Gurevych, Iryna},
+keywords = {Computation and Language (cs.CL), FOS: Computer and information sciences, FOS: Computer and information sciences},
+journal={arXiv preprint arXiv:2302.08957},
+title = {Like a Good Nearest Neighbor: Practical Content Moderation with Sentence Transformers},
+publisher = {arXiv},
+year = {2023},
+copyright = {Creative Commons Attribution 4.0 International}
+}
