@@ -37,8 +37,80 @@ source mvenv/bin/activate
 pip install -r requirements.txt
 pip install torch==1.9.0+cu111 -f https://download.pytorch.org/whl/torch_stable.html
 ```
- 
-Then, you can run the code with `python main.py`. You can specifiy which configurations by passing arguments to python. 
+## Use LaGoNN in your own work
+We find LAGONN_EXP to work best when the training data is imbalanced. If the data is balanced, then we recommend using LAGONN. LABEL appears to be the more performant configuration of LaGoNN, but we encourage you to experiment with TEXT and BOTH. Please let us know if you see any cool results.
+Below, find a few examples of how to use LaGoNN. You can also look at `custom_example.py`.
+#### LaGoNN_cheap
+```python
+from datasets import load_dataset
+from lagonn import LaGoNN
+
+#create huggingface dataset or load one
+sst2 = load_dataset('SetFit/sst2') #for example, sst2 and sst5
+sst2 = sst2.rename_column('label', 'labels')
+
+sst5 = load_dataset('SetFit/sst5')
+sst5 = sst5.rename_column('label', 'labels')
+#dataset needs to have a "text", "labels", and "label_text" field. We also assume a training, validation, and test split.
+
+sst2_train_ds = sst2['train']
+sst2_val_ds = sst2['validation']
+sst2_test_ds = sst2['test']
+
+sst5_train_ds = sst5['train']
+sst5_val_ds = sst5['validation']
+sst5_test_ds = sst5['test']
+
+
+#We need to pass LaGoNN a dictionary of configurations. We used default SetFit settings in our experiments.
+config_dict = {'lagonn_mode': 'LAGONN_CHEAP', # Don't finetune the embedding model 
+               'lagonn_config': 'LABEL', # Use the gold label and Euclidean distance to modify input text
+               'sample_size': 100, # How many examples per label to fine-tune the embedding model
+               'st_model': 'paraphrase-mpnet-base-v2', # Choose your Sentence Transformer
+               'batch_size': 16, # SetFit batch size
+               'model_seed': 0, # Seed for training
+               'metric': 'f1', # metric to pass to SetFit Trainer
+               'num_iterations': 20, # The number of text pairs to generate for contrastive learning (see https://github.com/huggingface/setfit)
+               'num_epochs': 1, # The number of epochs to use for contrastive learning (see https://github.com/huggingface/setfit)
+               'sample_seed': 0} # Seed used to sample data
+lgn = LaGoNN(train_ds=sst2_train_ds, val_ds=sst2_val_ds, test_ds=sst2_test_ds, config_dict=config_dict)
+eval_dict = lgn.custom()
+# If the dataset is binary, we compute the average precision, binary F1, and accuracy score.
+print(eval_dict)
+
+lgn = LaGoNN(train_ds=sst5_train_ds, val_ds=sst5_val_ds, test_ds=sst5_test_ds, config_dict=config_dict)
+eval_dict = lgn.custom()
+# If the dataset is multiclass, we compute the macro and micro F1 and the accuracy score.
+print(eval_dict)
+```
+#### LaGoNN/LaGoNN_lite
+Let's try fine-tuning the embedding model on a subset of the training data, for example, 100 examples per label (200 examples for sst-2, 500 examples for sst-5). We recommend this when you have a lot of balanced data.
+```python
+config_dict['lagonn_mode'] = 'LAGONN'
+lgn = LaGoNN(train_ds=sst2_train_ds, val_ds=sst2_val_ds, test_ds=sst2_test_ds, config_dict=config_dict)
+eval_dict = lgn.custom()
+print(eval_dict)
+
+lgn = LaGoNN(train_ds=sst5_train_ds, val_ds=sst5_val_ds, test_ds=sst5_test_ds, config_dict=config_dict)
+eval_dict = lgn.custom()
+print(eval_dict)
+```
+#### LaGoNN_exp
+Finally, we can fine-tune the encoder on all of the training data. We recommend this when your data very imbalanced.
+```python
+config_dict['lagonn_mode'] = 'LAGONN_EXP'
+
+lgn = LaGoNN(train_ds=sst2_train_ds, val_ds=sst2_val_ds, test_ds=sst2_test_ds, config_dict=config_dict)
+eval_dict = lgn.custom()
+print(eval_dict)
+
+lgn = LaGoNN(train_ds=sst5_train_ds, val_ds=sst5_val_ds, test_ds=sst5_test_ds, config_dict=config_dict)
+eval_dict = lgn.custom()
+print(eval_dict)
+```
+
+### Reproduce our results
+You can run our code with `python main.py`. You can specifiy which configurations by passing arguments to python. 
 * There are the following modes from the paper: 
     * PROBE (Sentence Transformer + logistic regression)
     * LOG_REG (Log Reg)
@@ -92,9 +164,6 @@ python main.py --ST_MODEL=paraphrase-mpnet-base-v2\
 Once finished, results will be written in the following format:
 `out_jsons/{task}/{mode}/{balance}/{seed}/{step}/(LaGoNN Config!)results.json`
 Note that you will need to complete all five (0-4) seeds. This is because we report the average over the five seed for both the macro F1 and average precision.
-
-### Use LaGoNN in your own work
-Coming soon!
 
 ### Citation
 If our work was helpful for your work, please be so kind as to cite us:
