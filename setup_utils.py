@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 from datasets import Dataset
 from transformers import AutoTokenizer
-from sklearn.metrics import average_precision_score, f1_score, classification_report
+from sklearn.metrics import average_precision_score, f1_score, accuracy_score, classification_report
 
 MODEL_SEED = 0
 
@@ -56,19 +56,75 @@ def evaluation(predictions, args):
     
     return avg_pre, f1
 
-def get_eval_dict(args, train_predictions, test_predictions):
+def custom_evaluation(predictions):
+    
+    logit_outputs, outputs, targets = predictions
+ 
+    if len(set(targets)) > 2:
+        binary = False
+        f1_mac = f1_score(targets, outputs, average='macro')*100
+        f1_mic = f1_score(targets, outputs, average='micro')*100    
+    else:
+        binary = True
+        f1_bin = f1_score(targets, outputs)*100
+        try:
+            avg_pre = average_precision_score(targets, logit_outputs)*100
+        except ValueError:
+            avg_pre = 0
+    acc = accuracy_score(targets, outputs)*100
+    
+    print(classification_report(targets, outputs))
+    if len(set(targets)) > 2:
+        return f1_mac, f1_mic, acc, binary
+    else:
+        return f1_bin, avg_pre, acc, binary
+     
 
-    print('TRAINING EVALUATION FOR {} ON SEED NUMBER = {}'.format(args.mode, args.seed))
-    train_avg_pre, train_f1 = evaluation(train_predictions, args)
+def get_eval_dict(args, train_predictions, test_predictions, custom=False):
+
+    if not custom:
+
+        print('TRAINING EVALUATION FOR {} ON SEED NUMBER = {}'.format(args.mode, args.seed))
+        train_avg_pre, train_f1 = evaluation(train_predictions, args)
+        
+        print('TESTING EVALUATION FOR {} ON SEED NUMBER = {}'.format(args.mode,  args.seed))
+        test_avg_pre, test_f1 = evaluation(test_predictions, args)
+        
+        eval_dict = {'train_avg_pre': train_avg_pre, 
+                    'train_f1': train_f1, 
+                    'test_avg_pre': test_avg_pre, 
+                    'test_f1': test_f1}
     
-    print('TESTING EVALUATION FOR {} ON SEED NUMBER = {}'.format(args.mode,  args.seed))
-    test_avg_pre, test_f1 = evaluation(test_predictions, args)
-    
-    eval_dict = {'train_avg_pre': train_avg_pre, 
-                'train_f1': train_f1, 
-                'test_avg_pre': test_avg_pre, 
-                'test_f1': test_f1}
-    
+    else:
+        print('Training evalutation')
+        f1_mac, f1_mic, acc, binary = custom_evaluation(train_predictions)
+        if binary:
+            train_bin = f1_mac
+            train_ap = f1_mic
+            train_acc = acc
+            print('Testing evluation')
+            t_f1_mac, t_f1_mic, t_acc, _ = custom_evaluation(test_predictions)
+            test_bin = t_f1_mac
+            test_ap = t_f1_mic
+            test_acc = t_acc
+            eval_dict = {'train_ap': train_ap, 
+                        'train_f1_binary': train_bin,
+                        'train_accuracy': train_acc, 
+                        'test_ap': test_ap, 
+                        'test_f1_binary': test_bin,
+                        'test_accuracy': test_acc}
+        else:
+            train_mac = f1_mac
+            train_mic = f1_mic
+            train_acc = acc
+            print('Testing evluation')
+            t_f1_mac, t_f1_mic, t_acc, _ = custom_evaluation(test_predictions)
+            eval_dict = {'train_f1_macro': train_mac,
+                         'train_f1_micro': train_mic,
+                         'train_accuracy': train_acc,
+                         'test_f1_macro': t_f1_mac,
+                         'test_f1_micro': t_f1_mic,
+                         'test_accuracy': t_acc}
     return eval_dict
 
 
