@@ -19,6 +19,7 @@ Don't hesitate to send us an e-mail or report an issue, if something is broken (
 * `setup_utils.py` -- util code
 * `train.py` -- code file for transformers
 * `use_setfit.py` -- code file using and predicting with SetFit
+* `custom_example.py` -- code file with examples for using LaGoNN for yourself.
 * `dataframe_with_val/` -- data files
 * `out_jsons/` -- where result jsons will be written
 * `lagonn_both_examples/` -- examples from Appendix of LaGoNN BOTH output
@@ -38,9 +39,11 @@ pip install -r requirements.txt
 pip install torch==1.9.0+cu111 -f https://download.pytorch.org/whl/torch_stable.html
 ```
 ## Use LaGoNN in your own work
-We find LAGONN_EXP to work best when the training data is imbalanced. If the data is balanced, then we recommend using LAGONN. LABEL appears to be the more performant configuration of LaGoNN, but we encourage you to experiment with TEXT and BOTH. Please let us know if you see any cool results.
+We find LAGONN_EXP to be the best mode when the training data is imbalanced. If the data is balanced, then we recommend using LAGONN. LABEL appears to be the more performant configuration of LaGoNN, but we encourage you to experiment with TEXT and BOTH. Please let us know if you see any interesting results.
 Below, find a few examples of how to use LaGoNN. You can also look at `custom_example.py`.
 #### LaGoNN_cheap
+We use LaGoNN_cheap to modify our data before performing linear probing of the Sentence Transformer.
+
 ```python
 from datasets import load_dataset
 from lagonn import LaGoNN
@@ -51,7 +54,7 @@ sst2 = sst2.rename_column('label', 'labels')
 
 sst5 = load_dataset('SetFit/sst5')
 sst5 = sst5.rename_column('label', 'labels')
-#dataset needs to have a "text", "labels", and "label_text" field. We also assume a training, validation, and test split.
+#the dataset needs to have a "text", "labels", and "label_text" field. We also assume a training, validation, and test split.
 
 sst2_train_ds = sst2['train']
 sst2_val_ds = sst2['validation']
@@ -73,40 +76,89 @@ config_dict = {'lagonn_mode': 'LAGONN_CHEAP', # Don't finetune the embedding mod
                'num_iterations': 20, # The number of text pairs to generate for contrastive learning (see https://github.com/huggingface/setfit)
                'num_epochs': 1, # The number of epochs to use for contrastive learning (see https://github.com/huggingface/setfit)
                'sample_seed': 0} # Seed used to sample data
+
 lgn = LaGoNN(train_ds=sst2_train_ds, val_ds=sst2_val_ds, test_ds=sst2_test_ds, config_dict=config_dict)
 eval_dict = lgn.custom()
 # If the dataset is binary, we compute the average precision, binary F1, and accuracy score.
 print(eval_dict)
+#example output:
+#{'train_ap': 98.15036812378, 
+#'train_f1_binary': 93.27056217114372, 
+#'train_accuracy': 92.97687861271676, 
+#'test_ap': 98.0644895038675, 
+#'test_f1_binary': 92.52437703141928, 
+#'test_accuracy': 92.42174629324546}
+
 
 lgn = LaGoNN(train_ds=sst5_train_ds, val_ds=sst5_val_ds, test_ds=sst5_test_ds, config_dict=config_dict)
 eval_dict = lgn.custom()
 # If the dataset is multiclass, we compute the macro and micro F1 and the accuracy score.
 print(eval_dict)
+#example output:
+# {'train_f1_macro': 59.86008435929301, 
+# 'train_f1_micro': 61.73923220973783, 
+# 'train_accuracy': 61.73923220973783, 
+# 'test_f1_macro': 50.34429970479122, 
+# 'test_f1_micro': 53.484162895927604, 
+# 'test_accuracy': 53.484162895927604}
 ```
 #### LaGoNN/LaGoNN_lite
 Let's try fine-tuning the embedding model on a subset of the training data, for example, 100 examples per label (200 examples for sst-2, 500 examples for sst-5). We recommend this when you have a lot of balanced data.
+
 ```python
 config_dict['lagonn_mode'] = 'LAGONN'
 lgn = LaGoNN(train_ds=sst2_train_ds, val_ds=sst2_val_ds, test_ds=sst2_test_ds, config_dict=config_dict)
 eval_dict = lgn.custom()
 print(eval_dict)
+#example output:
+# {'train_ap': 96.92265641029665, 
+# 'train_f1_binary': 92.19320415613592, 
+# 'train_accuracy': 91.96531791907515, 
+# 'test_ap': 97.26533880849458, 
+# 'test_f1_binary': 93.1129476584022, 
+# 'test_accuracy': 93.13563975837452}
 
 lgn = LaGoNN(train_ds=sst5_train_ds, val_ds=sst5_val_ds, test_ds=sst5_test_ds, config_dict=config_dict)
 eval_dict = lgn.custom()
 print(eval_dict)
+#example output:
+# {'train_f1_macro': 53.83595113544369, 
+# 'train_f1_micro': 54.260299625468164, 
+# 'train_accuracy': 54.260299625468164, 
+# 'test_f1_macro': 51.59342597162298, 
+# 'test_f1_micro': 52.76018099547512, 
+# 'test_accuracy': 52.76018099547512}
 ```
 #### LaGoNN_exp
 Finally, we can fine-tune the encoder on all of the training data. We recommend this when your data very imbalanced.
+
 ```python
 config_dict['lagonn_mode'] = 'LAGONN_EXP'
 
 lgn = LaGoNN(train_ds=sst2_train_ds, val_ds=sst2_val_ds, test_ds=sst2_test_ds, config_dict=config_dict)
 eval_dict = lgn.custom()
 print(eval_dict)
+#example output:
+# {'train_ap': 100.0, 
+# 'train_f1_binary': 100.0, 
+# 'train_accuracy': 100.0, 
+# 'test_ap': 97.59521194883212, 
+# 'test_f1_binary': 94.75958941112911, 
+# 'test_accuracy': 94.67325645249862}
+
 
 lgn = LaGoNN(train_ds=sst5_train_ds, val_ds=sst5_val_ds, test_ds=sst5_test_ds, config_dict=config_dict)
 eval_dict = lgn.custom()
 print(eval_dict)
+#example output:
+# {'train_f1_macro': 99.65678649502762, 
+# 'train_f1_micro': 99.68398876404494, 
+# 'train_accuracy': 99.68398876404494, 
+# 'test_f1_macro': 55.28123100607829, 
+# 'test_f1_micro': 56.289592760180994, 
+# 'test_accuracy': 56.289592760180994}
+
+
 ```
 
 ### Reproduce our results
