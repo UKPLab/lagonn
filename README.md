@@ -27,8 +27,6 @@ Don't hesitate to send us an e-mail or report an issue, if something is broken (
 
 ## Requirements
 Our results were computed in Python 3.9.13 with a 40 GB NVIDIA A100 Tensor Core GPU. Note that files will be written to disk if the code is run.
-Our datasets are sadly too big for GitHub, but you can access them here: https://drive.google.com/drive/folders/1m9lq5VDki4vfDP1GDROEeqY4WT9_ZNfL?usp=sharing
-Please make sure to add the folder to the code directory.
 
 ## Installation
 To setup, please follow the instructions below.
@@ -162,7 +160,13 @@ print(eval_dict)
 ```
 
 ### Reproduce our results
-You can run our code with `python main.py`. You can specifiy which configurations by passing arguments to python. 
+Our datafiles are too big for Github, but if you run
+```
+python get_data.py
+```
+then they will be downloaded and written to `dataframes_with_val/`.
+
+Then, you can run our code with `python main.py`. You can specifiy which configurations by passing arguments to python. 
 * There are the following modes from the paper: 
     * PROBE (Sentence Transformer + logistic regression)
     * LOG_REG (Log Reg)
