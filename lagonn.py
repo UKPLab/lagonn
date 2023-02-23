@@ -7,7 +7,6 @@ from sklearn.neighbors import NearestNeighbors
 from datasets import Dataset
 from use_setfit import do_setfit, predict_with_setfit
 from setup_utils import seed_everything, MODEL_SEED, get_eval_dict, predict_with_sklearn
-from setfit import SetFitModel
 
 
 class LaGoNN(object):
