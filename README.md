@@ -14,6 +14,7 @@ Don't hesitate to send us an e-mail or report an issue, if something is broken (
 > This repository contains experimental software and is published for the sole purpose of giving additional background details on the respective publication.
 
 ## Project structure
+* `get_data.py` -- script to download data files
 * `main.py` -- code file that uses the other code files
 * `modelling.py` -- code file for baselines
 * `setup_utils.py` -- util code
@@ -31,8 +32,11 @@ Our results were computed in Python 3.9.13 with a 40 GB NVIDIA A100 Tensor Core 
 ## Installation
 To setup, please follow the instructions below.
 ```
+git clone https://github.com/UKPLab/lagonn.git
+cd lagonn
 python -m venv mvenv
 source mvenv/bin/activate
+pip install --upgrade pip
 pip install -r requirements.txt
 pip install torch==1.9.0+cu111 -f https://download.pytorch.org/whl/torch_stable.html
 ```
