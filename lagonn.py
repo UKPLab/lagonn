@@ -6,7 +6,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import NearestNeighbors
 from datasets import Dataset
 from use_setfit import do_setfit, predict_with_setfit
-from setup_utils import seed_everything, MODEL_SEED, get_eval_dict, predict_with_sklearn
+from setup_utils import MODEL_SEED, get_eval_dict, predict_with_sklearn
 
 
 class LaGoNN(object):

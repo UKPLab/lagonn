@@ -1,4 +1,3 @@
-from transformers import AutoTokenizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sentence_transformers import SentenceTransformer
