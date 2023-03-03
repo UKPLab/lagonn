@@ -1,6 +1,6 @@
 # Like a Good Nearest Neighbor: LaGoNN
 
-Source code and data for [Like a Good Nearest Neighbor: Practical Content Moderation with Sentence Transformers](https://arxiv.org/abs/2302.08957).
+Source code and data for [Like a Good Nearest Neighbor: Practical Content Moderation with Sentence Transformers](https://arxiv.org/abs/2302.08957v2).
 
 Contact person: Luke Bates, luke's_first_name.luke's_last_name@tu-darmstadt.de
 
