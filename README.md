@@ -1,6 +1,6 @@
 # Like a Good Nearest Neighbor: LaGoNN
 
-Source code and data for [Like a Good Nearest Neighbor: Practical Content Moderation with Sentence Transformers](https://arxiv.org/abs/2302.08957v2).
+Source code and data for [Like a Good Nearest Neighbor: Practical Content Moderation and Text Classification](https://arxiv.org/abs/2302.08957v3).
 
 Contact person: Luke Bates, luke's_first_name.luke's_last_name@tu-darmstadt.de
 
@@ -14,6 +14,7 @@ Don't hesitate to send us an e-mail or report an issue, if something is broken (
 > This repository contains experimental software and is published for the sole purpose of giving additional background details on the respective publication.
 
 ## Project structure
+* `lagonn.py` -- Like a Good Nearest Neighbor
 * `get_data.py` -- script to download data files
 * `main.py` -- code file that uses the other code files
 * `modelling.py` -- code file for baselines
@@ -170,13 +171,16 @@ python get_data.py
 ```
 then they will be downloaded and written to `dataframes_with_val/`.
 
+#### A note on the data
+The content moderation datasets need to be downloaded (see the README in data) and moved to a directory `dataframes_with_val/` in the same directory as `main.py`. The other datasets will be downloaded automatically from Huggingface. Note that `liar` refers to the collapsed version from the paper while `orig_liar` refers to the original dataset.
+
 Then, you can run our code with `python main.py`. You can specifiy which configurations by passing arguments to python. 
 * There are the following modes from the paper: 
     * PROBE (Sentence Transformer + logistic regression)
-    * LOG_REG (Log Reg)
+    * LOG_REG (SetFit in the paper)
     * KNN (kNN)
     * SETFIT_LITE (SetFit_lite)
-    * SETFIT (SetFit)
+    * SETFIT (SetFit_exp in the paper)
     * ROBERTA_FREEZE (RoBERTa_freeze)
     * ROBERTA_FULL (RoBERTa_full)
     * LAGONN_CHEAP (LaGoNN_cheap)
@@ -184,15 +188,20 @@ Then, you can run our code with `python main.py`. You can specifiy which configu
     * LAGONN_LITE (LaGoNN_lite) 
     * LAGONN_EXP (LaGoNN_exp)
 * If you use a LaGoNN-based mode, you will also need to specific a LaGoNN Config:
-    * LABEL
+    * ONLY_LABEL (LABEL in the paper)
+    * DISTANCE
+    * LABEL (LabDist in the paper)
     * TEXT
-    * BOTH
+    * ALL
 
 * You can pass any Sentence Transformer. We used paraphrase-mpnet-base-v2.
 * You can pass any Transformer. We used roberta-base.
 * You can pass any dataset we used as a 'task'. Note that we assume a `text`, `labels`, and `label_text` field and a training, validation, and test dataset.
+* You can choose different distance precisions to round the Euclidean distance to with `--DISTANCE_PRECISION`.
+* You can choose how many neighbors you would like to consider when modifying text with `--NUM_NEIGHBORS`. We tried 1 to 5.
 * You can pass any seed for sampling data. We used 0, 1, 2, 3, and 4.
 * You can turn on/off the file writer.
+
 
 For example, if you wish to reproduce our LaGoNN_cheap results with seed = 0 on insincere-questions and write files to disk:
 ```
@@ -202,6 +211,19 @@ python main.py --ST_MODEL=paraphrase-mpnet-base-v2\
                --MODE=LAGONN_EXP\
                --LAGONN_CONFIG=LABEL\
                --WRITE=True\
+```
+```
+If you wish to reproduce our LaGoNN_exp results with seed = 4 on the original LIAR dataset, round to 5 decimals, modify with 5 neighbors and write files to disk:
+```
+python main.py --ST_MODEL=paraphrase-mpnet-base-v2\
+               --SEED=0\
+               --TASK=orig_liar\
+               --MODE=LAGONN_EXP\
+               --LAGONN_CONFIG=LABEL\
+               --DISTANCE_PRECISION=5\
+               --NUM_NEIGHBORS=5\
+               --WRITE=True\
+```
 ```
 If you wish to reproduce our RoBERTa_full results on Toxic conversations with seed  = 3 and not write files to disk:
 ```
@@ -222,7 +244,7 @@ python main.py --ST_MODEL=paraphrase-mpnet-base-v2\
 
 ### Expected results
 Once finished, results will be written in the following format:
-`out_jsons/{task}/{mode}/{balance}/{seed}/{step}/(LaGoNN Config!)results.json`
+`out_jsons/{task}/{mode}/{balance}/{seed}/{step}/(num_neighbors)(-)(LaGoNN Config!)(dist_precision)(-)results.json`
 Note that you will need to complete all five (0-4) seeds. This is because we report the average over the five seed for both the macro F1 and average precision.
 
 ### Citation
@@ -235,8 +257,8 @@ url = {https://arxiv.org/abs/2302.08957},
 author = {Bates, Luke and Gurevych, Iryna},
 keywords = {Computation and Language (cs.CL), FOS: Computer and information sciences, FOS: Computer and information sciences},
 journal={arXiv preprint arXiv:2302.08957},
-title = {Like a Good Nearest Neighbor: Practical Content Moderation with Sentence Transformers},
+title = {Like a Good Nearest Neighbor: Practical Content Moderation and Text Classification},
 publisher = {arXiv},
-year = {2023},
+year = {2024},
 copyright = {Creative Commons Attribution 4.0 International}}
 ```

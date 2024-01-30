@@ -6,11 +6,12 @@ import random
 import json
 import pandas as pd
 import numpy as np
-from datasets import Dataset
+from datasets import Dataset, load_dataset
 from transformers import AutoTokenizer
 from sklearn.metrics import average_precision_score, f1_score, accuracy_score, classification_report
 
 MODEL_SEED = 0
+
 
 os.environ["WANDB_DISABLED"] = "true"
 
@@ -23,6 +24,46 @@ def str2bool(v):
         return False
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
+    
+def get_lang_star_dict(args):
+    task_name = args.task
+    if task_name == 'amazon_reviews_multi_zh':
+        lang_star_dict = {0: '1星', 1: '2星', 2: '3星', 3: '4星', 4: '5星'}         
+        
+    elif task_name == 'amazon_reviews_multi_de':
+        lang_star_dict = {0: '1 stern', 1: '2 sterne', 2: '3 sterne', 3: '4 sterne', 4: '5 sterne'}
+        
+    elif task_name == 'amazon_reviews_multi_fr':
+        lang_star_dict = {0: '1 étoile', 1: '2 étoiles', 2: '3 étoiles', 3: '4 étoiles', 4: '5 étoiles'}
+        
+    elif task_name == 'amazon_reviews_multi_ja':
+        lang_star_dict = {0: '一つ星', 1: '二つ星', 2: '三つ星', 3: '四つ星', 4: '五つ星'}
+        
+    elif task_name == 'amazon_reviews_multi_es':
+        lang_star_dict = {0: '1 estrella', 1: '2 estrellas', 2: '3 estrellas', 3: '4 estrellas', 4: '5 estrellas'}
+    
+    elif task_name == 'amazon_reviews_multi_en':
+        lang_star_dict = {0: '1 star', 1: '2 stars', 2: '3 stars', 3: '4 stars', 4: '5 stars'}
+    return lang_star_dict
+
+def fix_amzn(args):
+    lang_star_dict = get_lang_star_dict(args)
+    ds = args.task
+    ds = load_dataset(f'SetFit/{ds}')
+    
+    ds = ds.rename_column("label_text", "str_label_text")
+    for split, dset in ds.items():
+        label_text =[lang_star_dict[i] for i in dset['label']]
+        dset = dset.add_column('label_text', label_text)
+        ds[split] = dset
+    
+    ds = ds.rename_column("label", "labels")
+    train_df = ds['train'].to_pandas()    
+    test_ds = ds['test']
+    val_ds = ds['validation']
+    
+    return train_df, test_ds, val_ds
+    
 
 def evaluation(predictions, args):
     if args.mode in ['ROBERTA_FREEZE', 'ROBERTA_FULL']:
@@ -135,11 +176,21 @@ def write_eval_jsons(eval_dict, args, step, balance):
         os.makedirs(folder)
     
     baselines = ['KNN', 'LOG_REG', 'PROBE', 'ROBERTA_FREEZE', 'ROBERTA_FULL', 'SETFIT', 'SETFIT_LITE']
+    lagonn_configs = ['LABEL', 'LABDIST', 'ALL', 'TEXT', 'BOTH', 'DISTANCE', 'ONLY_LABEL']
     
     if args.mode in baselines:
         config = 'results.json'
-    else:
-        config = '{}!results.json'.format(args.lagonnconfig)
+    else:    
+        if args.lagonnconfig in lagonn_configs:
+            if args.dist_precision != 'None':
+                config = '{}!{}-results.json'.format(args.lagonnconfig, args.dist_precision)
+            else:
+                config = '{}!results.json'.format(args.lagonnconfig)
+    
+    if args.num_neighbors != 1:
+        config = f'{args.num_neighbors}-{config}'
+
+    
     
     writefile = folder + config
     #try:
@@ -171,8 +222,7 @@ def fix_liar(args, split):
     outdf = df[['label_text', 'labels']].copy(deep=True)
     outdf['text'] = pd.Series(outtext).values
 
-    return outdf  
-
+    return outdf
 
 def seed_everything(seed):
     random.seed(seed)
@@ -190,6 +240,57 @@ def predict_with_sklearn(X, y, clf):
     predictions = (y_logit, y_pred, y)
     
     return predictions
+
+def ds_for_orig_liar(args):
+    st_modes = ['LAGONN_CHEAP', 'LAGONN', 'LAGONN_LITE', 'LAGONN_EXP', 
+               'KNN', 'LOG_REG', 'SETFIT', 'PROBE', 'SETFIT_LITE']
+    ds = load_dataset('liar')
+    ds = ds.rename_column("label", "labels")
+    if args.mode in st_modes:
+        tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/{}'.format(args.st_model))
+    elif args.mode in ['ROBERTA_FREEZE', 'ROBERTA_FULL']:
+        tokenizer = AutoTokenizer.from_pretrained(args.transformer_clf)
+    label_dict = {0: 'false',
+                  1: 'half-true',
+                  2: 'mostly-true',
+                  3: 'true',
+                  4: 'barely-true',
+                  5: 'pants-fire'}
+    
+    
+    outdses = [None, None, None]
+    for split, dataset in ds.items():
+        text, label_text = [], []
+        for txt, contxt, lab in zip(dataset['statement'], dataset['context'], dataset['labels']):
+            outtxt = '{} {} {}'.format(txt, tokenizer.sep_token, contxt).strip()
+            outtxt = re.sub(' +', ' ', outtxt)
+            text.append(outtxt)
+            label_text.append(label_dict[lab])
+        
+        df = pd.DataFrame({'text': text, 'labels': dataset['labels'], 'label_text': label_text})
+        if split in ['train']:
+            outdses[0] = df        
+        elif split in ['test']:
+            outdses[1] = Dataset.from_pandas(df)
+        elif split in ['validation']:
+            outdses[2] = Dataset.from_pandas(df)
+
+    return outdses[0], outdses[1], outdses[2]    
+
+def ds_for_general(ds):    
+    ds = load_dataset(f'SetFit/{ds}')
+    ds = ds.rename_column("label", "labels")
+    train_df = ds['train'].to_pandas()    
+    if 'valdation' not in ds:
+        split_df = ds['test'].to_pandas()
+        val_df = split_df.sample(frac=.3, random_state=42)
+        test_ds = Dataset.from_pandas(split_df.drop(val_df.index))
+        val_ds = Dataset.from_pandas(val_df)
+    else:
+        test_ds = ds['test']
+        val_ds = ds['valdation']
+    return train_df, test_ds, val_ds
+      
 
 def sample_df_convert_ds(train_df, balance, step, args):
     
